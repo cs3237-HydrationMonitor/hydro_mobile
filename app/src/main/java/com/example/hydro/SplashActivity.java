@@ -30,7 +30,7 @@ public class SplashActivity extends AppCompatActivity {
     private MyMqttClient client;
     private IMqttToken subToken;
     private SharedPreferences sharedPreferences = getSharedPreferences("USER", MODE_PRIVATE);
-    private HydrationMonitor hydrationMonitor;
+    private HydrationMonitor hydrationMonitor = null;
 
 
     @Override
@@ -81,7 +81,6 @@ public class SplashActivity extends AppCompatActivity {
         intent.putExtra("MqttClient", this.client);
         intent.putExtra("HydrationMonitor", this.hydrationMonitor);
 
-
         Timer timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override
@@ -113,6 +112,12 @@ public class SplashActivity extends AppCompatActivity {
         }
     }
 
+    private void save_to_prefs() {
+        Gson gson = new Gson();
+        String jsonString = gson.toJson(this.hydrationMonitor.getHydrationHistory());
+        sharedPreferences.edit().putString("HydrationHistory", jsonString).apply();
+    }
+
     public void initialize_mqtt_client() {
         String clientId = MqttClient.generateClientId();
         this.client = new MyMqttClient(getApplicationContext(), "tcp://52.88.144.214",
@@ -127,8 +132,21 @@ public class SplashActivity extends AppCompatActivity {
             @Override
             public void messageArrived(String topic, MqttMessage message) throws Exception {
                 if(topic.equals(TOPIC_PREDICTION)) {
-                    Toast.makeText(getApplicationContext(), message.toString(),
-                            Toast.LENGTH_LONG).show();
+//                    Toast.makeText(getApplicationContext(), message.toString(),
+//                            Toast.LENGTH_LONG).show();
+                    if(message.toString().equals("1")) {
+                        // In the case that hydrationMonitor has not initialized by the time it
+                        // gets the first result.
+                        while(hydrationMonitor == null) {
+                            // Wait for hydration monitor to be initialized
+                            Thread.sleep(1000);
+                        }
+                        if(hydrationMonitor.isNewDay()) {
+                            hydrationMonitor.startNewDay();
+                        }
+                        hydrationMonitor.incrementDailyCount();
+                        save_to_prefs();
+                    }
                 }
             }
 

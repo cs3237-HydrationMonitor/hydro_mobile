@@ -24,18 +24,38 @@ public class HydrationMonitor implements Serializable {
         super();
         this.dailyHydrationCount = dailyHydrationCount;
 
-        Date today = new Date();
-        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-        String todays_date = formatter.format(today);
-
-        if(!currentDate.equals(todays_date)) {
-            this.hydrationHistory.add(new Pair<String, Integer>(currentDate, dailyHydrationCount));
-            this.currentDate = todays_date;
+        if(isNewDay(currentDate)) {
+            this.startNewDay(currentDate, dailyHydrationCount);
+            this.currentDate = this.getTodaysDate();
             this.dailyHydrationCount = 0;
         } else {
             this.currentDate = currentDate;
             this.hydrationHistory = hydrationHistory;
         }
+    }
+
+    private void startNewDay(String currentDate, int dailyHydrationCount) {
+        this.hydrationHistory.add(new Pair<String, Integer>(currentDate, dailyHydrationCount));
+    }
+
+    public void startNewDay() {
+        this.hydrationHistory.add(new Pair<String, Integer>(this.currentDate, this.dailyHydrationCount));
+        this.currentDate = this.getTodaysDate();
+        this.dailyHydrationCount = 0;
+    }
+
+    private boolean isNewDay(String currentDate) {
+        return !currentDate.equals(this.getTodaysDate());
+    }
+
+    public boolean isNewDay() {
+        return !this.currentDate.equals(this.getTodaysDate());
+    }
+
+    private String getTodaysDate() {
+        Date today = new Date();
+        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+        return formatter.format(today);
     }
 
     public ArrayList<Pair<String, Integer>> getHydrationHistory() {
@@ -44,6 +64,10 @@ public class HydrationMonitor implements Serializable {
 
     public int getDailyHydrationCount() {
         return this.dailyHydrationCount;
+    }
+
+    public void incrementDailyCount() {
+        this.dailyHydrationCount += 1;
     }
 
 }
