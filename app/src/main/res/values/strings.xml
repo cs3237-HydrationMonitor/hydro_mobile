@@ -1,4 +1,10 @@
 <resources>
     <string name="app_name">Hydro</string>
     <string name="app_title">Hydro</string>
+    <string name="shared_pref_current_date">CurrentDate</string>
+    <string name="shared_pref_hydration_count">DailyHydrationCount</string>
+    <string name="shared_pref_hydration_history">HydrationHistory</string>
+    <string name="shared_pref_hydration_monitor">HydrationMonitor</string>
+    <string name="mqtt_broker_uri">tcp://52.41.105.199</string>
+    <string name="mqtt_topic_prediction">g19/iot/predict</string>
 </resources>
