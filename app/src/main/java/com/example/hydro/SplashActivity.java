@@ -2,10 +2,15 @@ package com.example.hydro;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Pair;
 import android.widget.Toast;
 
-import org.eclipse.paho.android.service.MqttAndroidClient;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import org.eclipse.paho.client.mqttv3.IMqttActionListener;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.IMqttToken;
@@ -14,18 +19,77 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
+
 public class SplashActivity extends AppCompatActivity {
 
     private final String TOPIC_PREDICTION = "g19/iot/predict";
-    private MqttAndroidClient client;
+    private MyMqttClient client;
     private IMqttToken subToken;
+    private SharedPreferences sharedPreferences = getSharedPreferences("USER", MODE_PRIVATE);
+    private HydrationMonitor hydrationMonitor;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
+        disable_action_bars();
+
+        // Initialize MQTT Framework
         initialize_mqtt_client();
         connect_and_subscribe_to_mqtt_broker();
+    }
+
+    public void disable_action_bars() {
+        try {
+            getActionBar().hide();
+            getSupportActionBar().hide();
+        } catch (NullPointerException e) {
+            // Do nothing
+        }
+    }
+
+    public void transition_to_home_activity() {
+
+        String hydrationHistoryData = sharedPreferences.getString("HydrationHistory", "");
+
+        try {
+            if (!hydrationHistoryData.isEmpty()) {
+
+                Type dataType = new TypeToken<ArrayList<Pair<String, Integer>>>() {
+                }.getType();
+
+                Gson gson = new Gson();
+
+                String currentDate = sharedPreferences.getString("CurrentDate", "");
+                int dailyHydrationCount = sharedPreferences.getInt("DailyHydrationCount", 0);
+                ArrayList<Pair<String, Integer>> hydrationHistory = gson.fromJson(hydrationHistoryData, dataType);
+
+                this.hydrationMonitor = new HydrationMonitor(dailyHydrationCount, currentDate, hydrationHistory);
+            } else {
+                this.hydrationMonitor = new HydrationMonitor();
+            }
+        } catch (Exception e) {
+            this.hydrationMonitor = new HydrationMonitor();
+        }
+
+        final Intent intent = new Intent(getApplicationContext(), HomeActivity.class);
+        intent.putExtra("MqttClient", this.client);
+        intent.putExtra("HydrationMonitor", this.hydrationMonitor);
+
+
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                startActivity(intent);
+            }
+        }, 3000);
+
     }
 
     public void subscribe_to_prediction_channel() {
@@ -33,8 +97,9 @@ public class SplashActivity extends AppCompatActivity {
             this.subToken = this.client.subscribe(TOPIC_PREDICTION, 0, null, new IMqttActionListener() {
                 @Override
                 public void onSuccess(IMqttToken asyncActionToken) {
-                    Toast.makeText(getApplicationContext(), "Subscription Success!",
-                            Toast.LENGTH_LONG).show();
+//                    Toast.makeText(getApplicationContext(), "Subscription Success!",
+////                            Toast.LENGTH_LONG).show();
+                    transition_to_home_activity();
                 }
 
                 @Override
@@ -50,7 +115,7 @@ public class SplashActivity extends AppCompatActivity {
 
     public void initialize_mqtt_client() {
         String clientId = MqttClient.generateClientId();
-        this.client = new MqttAndroidClient(getApplicationContext(), "tcp://52.88.144.214",
+        this.client = new MyMqttClient(getApplicationContext(), "tcp://52.88.144.214",
                 clientId);
         this.client.setCallback(new MqttCallback() {
             @Override
@@ -69,8 +134,8 @@ public class SplashActivity extends AppCompatActivity {
 
             @Override
             public void deliveryComplete(IMqttDeliveryToken token) {
-                Toast.makeText(getApplicationContext(), "Delivery Complete",
-                        Toast.LENGTH_LONG).show();
+//                Toast.makeText(getApplicationContext(), "Delivery Complete",
+//                        Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -80,8 +145,8 @@ public class SplashActivity extends AppCompatActivity {
             this.client.connect().setActionCallback(new IMqttActionListener() {
                 @Override
                 public void onSuccess(IMqttToken asyncActionToken) {
-                    Toast.makeText(getApplicationContext(), "Connection Success!",
-                            Toast.LENGTH_LONG).show();
+//                    Toast.makeText(getApplicationContext(), "Connection Success!",
+//                            Toast.LENGTH_LONG).show();
                     subscribe_to_prediction_channel();
                 }
 
