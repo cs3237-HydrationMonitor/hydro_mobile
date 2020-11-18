@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.os.Bundle;
-import android.util.Log;
 import android.util.Pair;
 import android.widget.Toast;
 
@@ -16,12 +15,9 @@ import com.google.gson.reflect.TypeToken;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
 import org.eclipse.paho.client.mqttv3.IMqttActionListener;
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.IMqttToken;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -35,6 +31,7 @@ public class SplashActivity extends AppCompatActivity {
     private SharedPreferences sharedPreferences;
     private HydrationMonitor hydrationMonitor = null;
     private Resources app_resources;
+    private Timer timer;
 
 
     @Override
@@ -146,7 +143,8 @@ public class SplashActivity extends AppCompatActivity {
 
     private void check_for_active_broker() {
         try {
-            final Timer timer = new Timer();
+//            Log.i("MQTT", "Checking");
+            this.timer = new Timer();
             timer.schedule(new TimerTask() {
                 @Override
                 public void run() {
@@ -156,6 +154,7 @@ public class SplashActivity extends AppCompatActivity {
                             Toast.makeText(getApplicationContext(), "No connection to MQTT Broker!",
                                     Toast.LENGTH_LONG).show();
                             client.close();
+                            Timer timer = new Timer();
                             timer.schedule(new TimerTask() {
                                 @Override
                                 public void run() {
@@ -171,6 +170,7 @@ public class SplashActivity extends AppCompatActivity {
                 public void onSuccess(IMqttToken asyncActionToken) {
 //                    Toast.makeText(getApplicationContext(), "Connection Success!",
 //                            Toast.LENGTH_LONG).show();
+                    timer.cancel();
                     subscribe_to_prediction_channel();
                 }
 
@@ -182,7 +182,6 @@ public class SplashActivity extends AppCompatActivity {
             });
 
         } catch (MqttException e) {
-            Log.i("MQTT", "HZZ");
             e.printStackTrace();
         }
     }

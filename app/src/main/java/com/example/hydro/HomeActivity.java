@@ -48,17 +48,12 @@ public class HomeActivity extends AppCompatActivity {
         this.hydrationMonitor.getLiveDailyHydrationCountData().observe(this, new Observer<Integer>() {
             @Override
             public void onChanged(Integer integer) {
-//                Log.i("MQTT", "Updating Text");
                 counterTextView.setText(String.valueOf(hydrationMonitor.getDailyHydrationCount()));
             }
         });
 
         initialize_mqtt_client();
-        subscribe_to_prediction_channel();
-
-//        Log.i("MQTT", "In Home");
-//        Log.i("MQTT", String.valueOf(this.hydrationMonitor.getLiveDailyHydrationCountData().hasActiveObservers()));
-//        Log.i("MQTT", String.valueOf(this.hydrationMonitor.getLiveDailyHydrationCountData().hasObservers()));
+        connect_to_broker();
     }
 
     public void disable_action_bars() {
@@ -76,6 +71,9 @@ public class HomeActivity extends AppCompatActivity {
 
     public void subscribe_to_prediction_channel() {
         try {
+            while(this.client == null) {
+                Thread.sleep(400);
+            }
             this.subToken = this.client.subscribe(TOPIC_PREDICTION, 0, null, new IMqttActionListener() {
                 @Override
                 public void onSuccess(IMqttToken asyncActionToken) {
@@ -91,6 +89,8 @@ public class HomeActivity extends AppCompatActivity {
                 }
             });
         } catch (MqttException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
@@ -109,6 +109,28 @@ public class HomeActivity extends AppCompatActivity {
                 clientId);
     }
 
+    private void connect_to_broker() {
+        try {
+            this.client.connect().setActionCallback(new IMqttActionListener() {
+                @Override
+                public void onSuccess(IMqttToken asyncActionToken) {
+//                    Toast.makeText(getApplicationContext(), "Connection Success!",
+//                            Toast.LENGTH_LONG).show();
+                    subscribe_to_prediction_channel();
+                }
+
+                @Override
+                public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+                    Toast.makeText(getApplicationContext(), "Connection Failed!",
+                            Toast.LENGTH_LONG).show();
+                }
+            });
+
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void set_client_message_received_callback() {
         this.client.setCallback(new MqttCallback() {
             @Override
@@ -119,18 +141,16 @@ public class HomeActivity extends AppCompatActivity {
 
             @Override
             public void messageArrived(String topic, MqttMessage message) throws Exception {
-//                Log.i("MQTT", "Received");
                 if(topic.equals(TOPIC_PREDICTION)) {
 //                    Toast.makeText(getApplicationContext(), message.toString(),
 //                            Toast.LENGTH_LONG).show();
-//                    Log.i("MQTT", "Received Right Topic");
                     if(message.toString().equals("1")) {
-//                        Log.i("MQTT", "Here");
                         if(hydrationMonitor.isNewDay()) {
                             hydrationMonitor.startNewDay();
                         }
+
+
                         hydrationMonitor.incrementDailyCount();
-//                        Log.i("MQTT", String.valueOf(hydrationMonitor.getDailyHydrationCount()));
                         save_to_prefs();
                     }
                 }
