@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.os.Bundle;
+import android.util.Log;
 import android.util.Pair;
 import android.widget.Toast;
 
@@ -21,6 +22,7 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -64,21 +66,22 @@ public class SplashActivity extends AppCompatActivity {
     public void transition_to_home_activity() {
 
         String hydrationHistoryData = sharedPreferences.getString(this.app_resources.getString(R.string.shared_pref_hydration_history), "");
+        Log.i("MQTT", hydrationHistoryData);
         String currentDate = sharedPreferences.getString(this.app_resources.getString(R.string.shared_pref_current_date), "");
-        int dailyHydrationCount = sharedPreferences.getInt(this.app_resources.getString(R.string.shared_pref_current_date), 0);
+        int dailyHydrationCount = sharedPreferences.getInt(this.app_resources.getString(R.string.shared_pref_hydration_count), 0);
 
         try {
             if (!hydrationHistoryData.isEmpty()) {
 
-                Type dataType = new TypeToken<ArrayList<Pair<String, Integer>>>() {
+                Type dataType = new TypeToken<HashMap<String, Integer>>() {
                 }.getType();
 
                 Gson gson = new Gson();
-                ArrayList<Pair<String, Integer>> hydrationHistory = gson.fromJson(hydrationHistoryData, dataType);
+                HashMap<String, Integer> hydrationHistory = gson.fromJson(hydrationHistoryData, dataType);
                 this.hydrationMonitor = new HydrationMonitor(dailyHydrationCount, currentDate, hydrationHistory);
 
             } else {
-                this.hydrationMonitor = new HydrationMonitor(dailyHydrationCount, currentDate, new ArrayList<Pair<String, Integer>>());
+                this.hydrationMonitor = new HydrationMonitor(dailyHydrationCount, currentDate, new HashMap<String, Integer>());
             }
         } catch (Exception e) {
             this.hydrationMonitor = new HydrationMonitor();
@@ -91,6 +94,7 @@ public class SplashActivity extends AppCompatActivity {
             @Override
             public void run() {
                 startActivity(intent);
+                finish();
             }
         }, 3000);
 

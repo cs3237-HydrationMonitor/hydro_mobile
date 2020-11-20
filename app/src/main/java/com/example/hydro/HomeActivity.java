@@ -8,6 +8,9 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -54,6 +57,19 @@ public class HomeActivity extends AppCompatActivity {
 
         initialize_mqtt_client();
         connect_to_broker();
+
+        Button historyButton = (Button)findViewById(R.id.history_activity_button);
+        historyButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+//                hydrationMonitor.incrementDailyCount();
+//                save_to_prefs();
+                Intent i = new Intent(getApplicationContext(), HistoryActivity.class);
+                i.putExtra(app_resources.getString(R.string.shared_pref_hydration_monitor), hydrationMonitor);
+                startActivity(i);
+            }
+        });
+
     }
 
     public void disable_action_bars() {
@@ -98,6 +114,7 @@ public class HomeActivity extends AppCompatActivity {
     private void save_to_prefs() {
         Gson gson = new Gson();
         String jsonString = gson.toJson(this.hydrationMonitor.getHydrationHistory());
+//        Log.i("MQTT", jsonString);
         sharedPreferences.edit().putString(this.app_resources.getString(R.string.shared_pref_current_date), this.hydrationMonitor.getCurrentDate()).apply();
         sharedPreferences.edit().putInt(this.app_resources.getString(R.string.shared_pref_hydration_count), this.hydrationMonitor.getDailyHydrationCount()).apply();
         sharedPreferences.edit().putString(this.app_resources.getString(R.string.shared_pref_hydration_history), jsonString).apply();
@@ -148,7 +165,6 @@ public class HomeActivity extends AppCompatActivity {
                         if(hydrationMonitor.isNewDay()) {
                             hydrationMonitor.startNewDay();
                         }
-
 
                         hydrationMonitor.incrementDailyCount();
                         save_to_prefs();

@@ -5,6 +5,6 @@
     <string name="shared_pref_hydration_count">DailyHydrationCount</string>
     <string name="shared_pref_hydration_history">HydrationHistory</string>
     <string name="shared_pref_hydration_monitor">HydrationMonitor</string>
-    <string name="mqtt_broker_uri">tcp://54.201.252.120</string>
+    <string name="mqtt_broker_uri">tcp://35.164.141.107</string>
     <string name="mqtt_topic_prediction">g19/iot/predict</string>
 </resources>
